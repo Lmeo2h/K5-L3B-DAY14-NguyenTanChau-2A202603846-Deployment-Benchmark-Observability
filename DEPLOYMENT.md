@@ -1,30 +1,28 @@
 # Deployment Information — Day 14 (Part 3 & Part 6)
 
 ## Public URL
-https://<your-deployed-agent-url>
+https://k5-l3b-day14-nguyentanchau-2a202603846.onrender.com
 
 ## Platform
-Railway *(hoặc Render — giữ lại nền tảng bạn deploy)*
+Render (Web Service `runtime: docker` từ `06-lab-complete/Dockerfile`, kết nối Managed Redis trên cloud)
 
 ## Source Directory Deployed
-`06-lab-complete/` (build từ `Dockerfile` multi-stage, dùng cấu hình `railway.toml` / `render.yaml`)
+`06-lab-complete/` (build multi-stage `python:3.11-slim`, cấu hình `render.yaml` / `railway.toml`)
 
-## Environment Variables Set (trên Platform Dashboard — không commit giá trị thật)
-- `PORT` *(platform tự cấp)*
+## Environment Variables Set (cấu hình trên Render Dashboard — không commit giá trị thật)
+- `PORT` *(Render tự cấp)*
 - `ENVIRONMENT=production`
-- `REDIS_URL` *(trỏ tới managed Redis service trên cùng nền tảng)*
-- `AGENT_API_KEY` *(secret cấu hình qua dashboard/CLI, không ghi vào code)*
+- `REDIS_URL` *(kết nối Redis service trên cloud)*
+- `AGENT_API_KEY=k5-day14-****` *(secret cấu hình qua dashboard, đã che)*
 - `RATE_LIMIT_PER_MINUTE=10`
 - `DAILY_BUDGET_USD=1.0`
 - `LOG_LEVEL=INFO`
 
 ## Test Commands (4 lệnh tự kiểm CP6)
 
-Đặt `BASE` là Public URL ở trên và `AGENT_API_KEY` là key đã cấu hình trên nền tảng:
-
 ```bash
-export BASE="https://<your-deployed-agent-url>"
-export AGENT_API_KEY="<YOUR_API_KEY>"
+export BASE="https://k5-l3b-day14-nguyentanchau-2a202603846.onrender.com"
+export AGENT_API_KEY="k5-day14-****"   # thay bằng key thật cấu hình trên Render
 
 # 1. Health check (liveness) — mong đợi: 200
 curl -sS -o /dev/null -w '%{http_code}\n' "$BASE/health"
@@ -44,30 +42,40 @@ curl -sS -o /dev/null -w '%{http_code}\n' -X POST "$BASE/ask" \
   -d '{"user_id":"test","question":"Hello"}'
 ```
 
-### Kết quả kiểm tra thực tế (dán output 4 lệnh trên)
+### Kết quả kiểm tra thực tế (đã chạy trên Public URL)
 
 ```text
-# /health      -> 200
-# /ready       -> 200
-# /ask (no key)-> 401
-# /ask (valid) -> 200
+GET  /health               -> 200
+GET  /ready                -> 200
+POST /ask (no X-API-Key)   -> 401
+POST /ask (X-API-Key: k5-day14-****) -> 200
 ```
 
-### Kiểm tra chi tiết JSON response (tùy chọn, đã che key)
+**Chi tiết JSON response thực tế:**
 
-```bash
-curl -s "$BASE/health"
-curl -s "$BASE/ready"
-curl -s -X POST "$BASE/ask" \
-  -H "X-API-Key: <REDACTED>" \
-  -H "Content-Type: application/json" \
-  -d '{"user_id":"test","question":"Hello"}'
+```json
+// GET /health
+{"status":"ok","environment":"production","uptime_seconds":4.2}
+
+// GET /ready
+{"ready":true,"redis":"ok"}
+
+// POST /ask (X-API-Key: k5-day14-****)
+{"question":"Hello","answer":"Agent đang hoạt động tốt! (mock response) Hỏi thêm câu hỏi đi nhé.","usage":{"input_tokens":2,"output_tokens":17,"cost_usd":1.05e-05}}
 ```
 
+### Kết quả `check_production_ready.py --public-url`
+
 ```bash
-# Kiểm tra bổ sung bằng script chấm:
 cd 06-lab-complete
-.venv/bin/python check_production_ready.py --public-url "$BASE"
+AGENT_API_KEY="k5-day14-****" .venv/bin/python check_production_ready.py \
+  --public-url "https://k5-l3b-day14-nguyentanchau-2a202603846.onrender.com"
+```
+
+```text
+✅ Public URL: GET https://k5-l3b-day14-nguyentanchau-2a202603846.onrender.com/health → 200
+Result: 12/12 tiêu chí đạt · 44/44 checks passed
+🎉 PASS 12/12 — PRODUCTION READY! Deploy nào!
 ```
 
 ## Screenshots

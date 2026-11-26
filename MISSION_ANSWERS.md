@@ -151,8 +151,19 @@ Content-Type: application/json
 
 ### Exercise 3.1 / 3.2: Deploy agent Part 6 (`06-lab-complete/`)
 
-- **Public URL:** *(Sẽ cập nhật ngay sau khi hoàn tất bước deploy CP6 — xem `DEPLOYMENT.md`)*
-- **Screenshots:** `screenshots/dashboard.png`, `screenshots/running.png`, `screenshots/test.png` *(sẽ bổ sung sau CP6)*
+- **Platform:** Render (`runtime: docker` từ `06-lab-complete/Dockerfile`, kết nối Managed Redis trên cloud)
+- **Public URL:** https://k5-l3b-day14-nguyentanchau-2a202603846.onrender.com
+- **Kết quả kiểm tra 4 lệnh CP6 trên Public URL (đã che `AGENT_API_KEY` thành `k5-day14-****`):**
+  - `GET /health` → **`200`** (`{"status":"ok","environment":"production","uptime_seconds":4.2}`)
+  - `GET /ready` → **`200`** (`{"ready":true,"redis":"ok"}`)
+  - `POST /ask` (không có `X-API-Key`) → **`401`**
+  - `POST /ask` (`X-API-Key: k5-day14-****`) → **`200`** (`{"question":"Hello","answer":"Agent đang hoạt động tốt! (mock response) Hỏi thêm câu hỏi đi nhé.","usage":{"input_tokens":2,"output_tokens":17,"cost_usd":1.05e-05}}`)
+- **Xác minh bằng script chấm:** `check_production_ready.py --public-url "https://k5-l3b-day14-nguyentanchau-2a202603846.onrender.com"` báo **`✅ Public URL: GET .../health → 200`** và **`PASS 12/12 (44/44 checks passed)`**.
+- **Screenshots:**
+  - [Deployment dashboard](screenshots/dashboard.png)
+  - [Service running](screenshots/running.png)
+  - [Test results](screenshots/test.png)
+- Chi tiết đầy đủ xem thêm trong `DEPLOYMENT.md`.
 
 ### So sánh `railway.toml` và `render.yaml`
 
@@ -339,7 +350,7 @@ Total messages: 10
 
 ## Part 6: Final Project (`06-lab-complete/`)
 
-Kết quả chạy `.venv/bin/python check_production_ready.py` đầy đủ trong WSL2 (`Ubuntu-22.04`, `os.name == "posix"`, Docker Engine `29.9.3`, image `273 MB`, `docker stop` exit code `0` trong `0.6s`):
+Kết quả chạy `.venv/bin/python check_production_ready.py --public-url "https://k5-l3b-day14-nguyentanchau-2a202603846.onrender.com"` đầy đủ trong WSL2 (`Ubuntu-22.04`, `os.name == "posix"`, Docker Engine `29.9.3`, image `273 MB`, `docker stop` exit code `0` trong `0.6s`, đã kiểm tra kèm Public URL trên Render):
 
 ```text
 ================================================================
@@ -357,7 +368,7 @@ Kết quả chạy `.venv/bin/python check_production_ready.py` đầy đủ tro
      ✅ Graceful shutdown
      ✅ Public URL ready (Railway / Render config)
 ----------------------------------------------------------------
-  Result: 12/12 tiêu chí đạt · 43/43 checks passed
+  Result: 12/12 tiêu chí đạt · 44/44 checks passed
   🎉 PASS 12/12 — PRODUCTION READY! Deploy nào!
 ================================================================
 ```
@@ -374,7 +385,15 @@ Kết quả chạy `.venv/bin/python check_production_ready.py` đầy đủ tro
    - **Hỏi AI:** Hỗ trợ triển khai theo từng bước `config.py`, `.env.example`, `redis_client.py`, `auth.py`, `rate_limiter.py`, `cost_guard.py`, `main.py`, `Dockerfile` (multi-stage dùng `/opt/venv` + non-root + `exec uvicorn`), `.dockerignore`, `docker-compose.yml`, `railway.toml` và `render.yaml`.
    - **Nhận được:** Code hoàn chỉnh cho 12 file TODO theo hợp đồng của `06-lab-complete/README.md`.
    - **Tự kiểm tra:** Chạy `docker compose config`, chạy `.venv/bin/python check_production_ready.py --skip-docker` (kiểm tra trước tầng ứng dụng & runtime), sau đó chạy bản đầy đủ `.venv/bin/python check_production_ready.py` trong WSL2 đạt **`PASS 12/12` (43/43 checks)** và kiểm tra `git status` không có `.env` hay file ngoài phạm vi.
-3. **Chạy thực nghiệm Part 1, 2, 4, 5 & Part 7 (Bước 1):**
-   - **Hỏi AI:** Hỗ trợ thực thi các lệnh chạy server/container, đo kích thước image, test JWT/rate limit/stateless, thêm Histogram `agent_question_length_chars` (Exercise 7.1), chạy load test & eval và bổ sung `KNOWLEDGE_BASE` trong `develop/utils/mock_llm.py`.
-   - **Nhận được:** Output thực tế từ các lệnh chạy trên máy và bản tổng hợp `MISSION_ANSWERS.md`, `BENCHMARK_REPORT.md`.
-   - **Tự kiểm tra:** Mọi số liệu (MB image, latency p50/p95/p99, accuracy, cost) đều lấy trực tiếp từ lệnh chạy thực tế và đối chiếu khớp với các file JSON trong `reports/`.
+3. **Chạy thực nghiệm Part 1, 2, 4, 5 & Part 7 Bước 1 (CP1–CP4, CP7):**
+   - **Hỏi AI:** Hỗ trợ thực thi các lệnh chạy server/container, đo kích thước image, test JWT/rate limit/stateless, thêm Histogram `agent_question_length_chars` (Exercise 7.1), chạy load test & eval và bổ sung 2 entry vào `KNOWLEDGE_BASE` trong `develop/utils/mock_llm.py`.
+   - **Nhận được:** Output thực tế từ các lệnh chạy trên máy và bản tổng hợp `MISSION_ANSWERS.md`, `BENCHMARK_REPORT.md` cùng 10 file JSON trong `reports/`.
+   - **Tự kiểm tra:** Mọi số liệu (MB image, latency p50/p95/p99, accuracy `23/23`, cost) đều lấy trực tiếp từ lệnh chạy thực tế và đối chiếu khớp với các file JSON trong `reports/`.
+4. **Chạy Observability Stack Part 7 Bước 2 (CP8):**
+   - **Hỏi AI:** Hỗ trợ chạy unit test `promtool`, khắc phục lỗi thiếu `ENV PYTHONUSERBASE=/home/agent/.local` trong starter `production/Dockerfile`, chạy Locust headless scaling 1 vs 3 instances với `--no-deps`, kiểm tra Nginx chặn `/metrics` (`404`), kích hoạt 2 alert `Firing` (`AgentHighErrorRate`, `LLMCostBurnRateHigh`), trích xuất `trace_id` và log JSON từ Jaeger/container logs.
+   - **Nhận được:** File `scale_1_stats.csv`, `scale_3_stats.csv`, số liệu thời gian firing, trace chậm/lỗi và phần Mục 4–6 của `BENCHMARK_REPORT.md`.
+   - **Tự kiểm tra:** Tự mở Grafana, Jaeger và Prometheus trên trình duyệt để quan sát trực tiếp và chụp đủ 4 ảnh (`grafana-dashboard.png`, `jaeger-slow-trace.png`, `jaeger-error-trace.png`, `prometheus-alert-firing.png`), sau đó xóa `.env` tạm và chạy `docker compose -p k5-day14-observability down -v`.
+5. **Deploy Cloud (CP6) & rà soát trước khi nộp bài:**
+   - **Hỏi AI:** Kiểm tra 4 lệnh `curl` và `check_production_ready.py --public-url` với Public URL đã deploy lên Render, cập nhật `DEPLOYMENT.md` & Part 3 của `MISSION_ANSWERS.md` (che key thành `k5-day14-****`), và rà soát toàn bộ checklist trong `SUBMISSION.md`.
+   - **Nhận được:** Kết quả xác minh `200 / 200 / 401 / 200`, `PASS 12/12 (44/44 checks passed)` và báo cáo rà soát sạch secret/cấu trúc nộp bài.
+   - **Tự kiểm tra:** Tự thao tác deploy Web Service + Redis và cấu hình biến môi trường trên Render Dashboard, tự chụp 3 ảnh (`dashboard.png`, `running.png`, `test.png`) và đối chiếu lại toàn bộ checklist trước khi commit & push lên GitHub.
